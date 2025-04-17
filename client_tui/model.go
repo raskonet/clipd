@@ -132,7 +132,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		h, v := docStyle.GetFrameSize()
 		listHeight := m.height - v - 5
-		paneWidth := (m.width - h - 2) /(int)NumPanes // -2 for borders between panes
+		paneWidth := (m.width - h - 2) /int(NumPanes) // -2 for borders between panes
 
 		m.histList.SetSize(paneWidth, listHeight)
 		m.deviceList.SetSize(paneWidth, listHeight)
@@ -450,9 +450,10 @@ func (m Model) View() string {
 
 	// Help View
 	helpView := helpStyle.Render(m.help.View(m.keys))
-	if m.incomingFileOffer != nil { // Show contextual help for file offer
-		offerHelp := lipgloss.JoinHorizontal(lipgloss.Left,
-			special.Render(fmt.Sprintf("Offer: '%s' ", m.incomingFileOffer.Filename)),
+	if m.incomingFileOffer != nil {
+	offerHelp := lipgloss.JoinHorizontal(lipgloss.Left,
+			// Correct way: Create style -> Set Color -> Render
+			lipgloss.NewStyle().Foreground(special).Render(fmt.Sprintf("Offer: '%s' ", m.incomingFileOffer.Filename)),
 			m.keys.AcceptFile.Help().Key+" accept", " | ",
 			m.keys.RejectFile.Help().Key+" reject",
 		)

@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/url"
 	"time"
-
+"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gorilla/websocket"
 )
@@ -19,7 +19,6 @@ const (
 	maxMessageSize = 512 * 1024        // Maximum message size allowed from peer.
 )
 
-// connectCmd attempts to establish a WebSocket connection.
 // It returns a tea.Msg indicating the result (ConnectionStatusMsg).
 func connectCmd(serverURL, apiKey, hostname string) tea.Cmd {
 	return func() tea.Msg {
@@ -38,15 +37,12 @@ func connectCmd(serverURL, apiKey, hostname string) tea.Cmd {
 		conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 		if err != nil {
 			log.Printf("Dial error: %v", err)
-			// Return error status without connection details
 			return ConnectionStatusMsg{Status: Disconnected, Err: fmt.Errorf("dial failed: %w", err)}
 		}
 		log.Println("WebSocket connected.")
 
-		// Create context for managing background goroutines for this connection
-		ctx, cancel := context.WithCancel(context.Background())
+		_, cancel := context.WithCancel(context.Background())
 
-		// Return success message with connection details and cancel function
 		return ConnectionStatusMsg{Status: Connected, Conn: conn, Cancel: cancel, Err: nil}
 	}
 }
