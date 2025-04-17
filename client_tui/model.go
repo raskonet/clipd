@@ -20,6 +20,8 @@ import (
 
 type FocusablePane int
 
+const maxHistorySize=20
+
 const (
 	HistoryPane FocusablePane = iota
 	DevicesPane
@@ -111,7 +113,7 @@ func (m Model) Init() tea.Cmd {
 	)
 }
 
-// RemarshalData helper (can be moved to a util file)
+
 func RemarshalData(data interface{}, target interface{}) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -129,8 +131,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		h, v := docStyle.GetFrameSize()
-		listHeight := m.height - v - 5 // Adjust for status/help lines
-		paneWidth := (m.width - h - 2) / NumPanes // -2 for borders between panes
+		listHeight := m.height - v - 5
+		paneWidth := (m.width - h - 2) /(int)NumPanes // -2 for borders between panes
 
 		m.histList.SetSize(paneWidth, listHeight)
 		m.deviceList.SetSize(paneWidth, listHeight)
@@ -408,26 +410,14 @@ func (m *Model) updateFocus() {
 	m.deviceList.SetShowFilter(m.focus == DevicesPane)
 	m.logView.MouseWheelEnabled = (m.focus == LogPane)
 
-	if m.focus == HistoryPane {
-		m.histList.Focus()
-		m.deviceList.Blur()
-	} else if m.focus == DevicesPane {
-		m.deviceList.Focus()
-		m.histList.Blur()
-	} else { // Log Pane or others
-		m.histList.Blur()
-		m.deviceList.Blur()
-	}
 }
 
 
-// View renders the UI
 func (m Model) View() string {
 	if !m.ready {
 		return "Initializing..."
 	}
 
-	// Status Line
 	status := fmt.Sprintf(" Status: %s", m.connectedState)
 	if m.connectedState == Connecting {
 		status += " " + m.spinner.View()

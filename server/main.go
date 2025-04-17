@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
-
+	"time"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -92,10 +92,10 @@ func runHub() {
 		case client := <-unregister:
 			mutex.Lock()
 			if existingClient, ok := clients[client.ID]; ok {
-				// Ensure we are closing the correct connection if client object was recreated
+			
 				if existingClient.Conn == client.Conn {
 					delete(clients, client.ID)
-					close(client.Conn) // Use non-blocking close helper?
+					existingClient.Conn.Close()
 					log.Printf("Client unregistered: %s (%s)", client.ID, client.Hostname)
 				}
 			}
@@ -131,10 +131,10 @@ func runHub() {
 					}
 				case FileOfferData:
 					if message.Type == "file_offer" {
-						if data.TargetID != "" && client.ID != data.TargetID { // Skip if targetted and not the target
+						if data.TargetID != "" && client.ID != data.TargetID {
 							targetted = true
 						}
-						if client.ID == message.SenderID { // Don't send offer to self
+						if client.ID == message.SenderID {
 							targetted = true
 						}
 					}
@@ -146,12 +146,12 @@ func runHub() {
 				err := writeToClient(client, websocket.TextMessage, msgBytes)
 				if err != nil {
 					log.Printf("Write error to client %s: %v", client.ID, err)
-					// Trigger unregistration for this client
-					// Use a non-blocking send to avoid deadlocking the hub
+				
+			
 					go func(c *ClientInfo) {
 						select {
 						case unregister <- c:
-						default: // Hub might be busy, client might already be unregistering
+						default:
 							log.Printf("Unregister channel full or blocked for client %s", c.ID)
 						}
 					}(client)
@@ -266,9 +266,9 @@ func readLoop(client *ClientInfo) {
 			} else {
 				log.Printf("Client %s (%s) disconnected normally or timed out.", client.ID, client.Hostname)
 			}
-			break // Exit loop on any error or close
+			break
 		}
-		// Reset read deadline after successful read
+	
 		client.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 		if messageType == websocket.TextMessage {
@@ -278,7 +278,7 @@ func readLoop(client *ClientInfo) {
 				continue
 			}
 
-			msg.SenderID = client.ID // Inject sender ID
+			msg.SenderID = client.ID 
 
 			switch msg.Type {
 			case "clipboard_update":
@@ -295,7 +295,7 @@ func readLoop(client *ClientInfo) {
 						historyMutex.Unlock()
 
 						broadcastMsg := BaseMessage{Type: "clipboard_update", Data: data, SenderID: client.ID}
-						broadcast <- broadcastMsg // Let hub handle broadcast
+						broadcast <- broadcastMsg 
 					}
 					clipboardLock.Unlock()
 				} else {
@@ -342,7 +342,7 @@ func readLoop(client *ClientInfo) {
 	}
 }
 
-// RemarshalData helper to decode nested data structures
+
 func RemarshalData(data interface{}, target interface{}) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -366,7 +366,7 @@ func main() {
 
 	clipboardHistory = make([]string, 0, maxHistorySize)
 
-	go runHub() // Start the central hub
+	go runHub() 
 
 	http.HandleFunc("/ws", handleConnections)
 	http.HandleFunc("/health", healthCheck)
