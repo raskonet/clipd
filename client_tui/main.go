@@ -11,7 +11,6 @@ import (
 )
 
 func setupLogging() (*os.File, error) {
-	// Ensure config dir exists
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("could not get home dir: %w", err)
@@ -26,18 +25,17 @@ func setupLogging() (*os.File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
-	log.Printf("--- Session Started ---") // Mark start in log file
+	log.Printf("--- Session Started ---") 
 	return f, nil
 }
 
 func loadEnv() {
-	// Try loading from current dir, then config dir
-	godotenv.Load(".env") // Load from CWD first
+	godotenv.Load("../.env") 
 
 	home, err := os.UserHomeDir()
 	if err == nil {
 		configEnv := filepath.Join(home, ".config", "sync-clipboard-tui", ".env")
-		godotenv.Load(configEnv) // Load from config dir (overrides CWD if exists)
+		godotenv.Load(configEnv)
 	}
 }
 
@@ -49,7 +47,7 @@ func main() {
 	}
 	defer logFile.Close()
 
-	loadEnv() // Load config from .env files
+	loadEnv() 
 
 	serverURL := os.Getenv("SERVER_WS_URL")
 	apiKey := os.Getenv("CLIPBOARD_API_KEY")
@@ -66,7 +64,7 @@ func main() {
 	initialModel := NewModel(serverURL, apiKey, hostname)
 
 	p := tea.NewProgram(initialModel, tea.WithAltScreen(), tea.WithMouseCellMotion()) // Enable mouse for viewport scrolling
-	initialModel.programRef = p // Give model reference to program for sending messages
+	initialModel.programRef = p 
 
 	if _, err := p.Run(); err != nil {
 		log.Fatalf("Error running Bubbletea program: %v", err)
